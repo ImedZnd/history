@@ -6,8 +6,8 @@ import javax.persistence.Entity
 import javax.persistence.Id
 import javax.persistence.Table
 
-@Table(name = "events")
-@Entity(name = "events")
+@Table(name = "event")
+@Entity(name = "event")
 data class EventDAO(
     @Id
     val action: Event.EventAction = Event.EventAction.SAVEUSER,

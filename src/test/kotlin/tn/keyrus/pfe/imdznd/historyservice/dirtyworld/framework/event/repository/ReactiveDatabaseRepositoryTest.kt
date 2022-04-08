@@ -1,28 +1,24 @@
 package tn.keyrus.pfe.imdznd.historyservice.dirtyworld.framework.event.repository
 
+import kotlinx.coroutines.flow.count
+import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
-import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.test.annotation.DirtiesContext
 import org.springframework.test.context.ContextConfiguration
-import reactor.core.publisher.Mono
-import reactor.test.StepVerifier
 import tn.keyrus.pfe.imdznd.historyservice.cleanworld.event.model.Event
-import tn.keyrus.pfe.imdznd.historyservice.cleanworld.event.repository.EventRepository
 import tn.keyrus.pfe.imdznd.historyservice.dirtyworld.event.dao.EventDAO
-import tn.keyrus.pfe.imdznd.historyservice.dirtyworld.event.repository.ReactiveDatabaseRepository
+import tn.keyrus.pfe.imdznd.historyservice.dirtyworld.event.repository.DatabaseRepository
 import tn.keyrus.pfe.imdznd.historyservice.dirtyworld.framework.initializer.Initializer
 import java.time.LocalDateTime
-import java.util.function.Predicate
-import java.util.stream.IntStream
 
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext
 @ContextConfiguration(initializers = [Initializer::class])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-internal class ReactiveDatabaseRepositoryTest @Autowired constructor(
-    private val reactiveRepository: ReactiveDatabaseRepository
+internal class ReactiveDatabaseRepositoryTest(
+    private val reactiveDatabaseRepository: DatabaseRepository
 ) {
     @BeforeAll
     fun beforeAll() {
@@ -49,37 +45,27 @@ internal class ReactiveDatabaseRepositoryTest @Autowired constructor(
         val action = Event.EventAction.SAVEUSER
         val objectId = "objectId"
         val localtime = LocalDateTime.now()
-        val event = EventDAO(action, objectId, localtime)
-        val source = reactiveRepository.save(event)
-        StepVerifier.create(source)
-            .expectNext(event)
-            .verifyComplete()
+        val event = Event.of(action, objectId, localtime)
     }
 
     @Test
-    fun `Empty if repository is have one element`() {
-        val action = Event.EventAction.SAVEUSER
-        val objectId = "objectId"
-        val localtime = LocalDateTime.now()
-        val event = EventDAO(action, objectId, localtime)
-        print("before test")
-        val x = reactiveRepository.save(event)
-        val source = reactiveRepository.save(event)
-    }
+    suspend fun `Empty if repository is have one element`() {
+        runBlocking{
+            generateSequence(1) { it + 1 }
+                .take(5)
+                .map {
+                    EventDAO()
+                }
+                .filter { it.toEvent().isRight }
+                .forEach {
+                    reactiveDatabaseRepository
+                        .saveEvent(it.toEvent().get())
+                }
+            val result =
+                reactiveDatabaseRepository
+                    .findAllEvents()
+            assert(result.count() == 1)
+        }
 
-    @Test
-    fun `Flow with one Event if repository have only one`() {
-        val size = 5
-        val x = IntStream.iterate(1) { i: Int -> i + 1 }
-            .limit(size.toLong())
-            .boxed()
-            .map {
-                EventDAO()
-            }
-            .map { reactiveRepository.save(it) }
-        val f: Long =1
-        assertAll(
-            { assert(reactiveRepository.findAll().count()== Mono.just(f)) },
-        )
     }
 }
