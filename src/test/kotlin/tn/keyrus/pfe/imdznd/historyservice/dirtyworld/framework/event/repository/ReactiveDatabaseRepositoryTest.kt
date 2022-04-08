@@ -3,6 +3,7 @@ package tn.keyrus.pfe.imdznd.historyservice.dirtyworld.framework.event.repositor
 import kotlinx.coroutines.flow.count
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.*
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment
 import org.springframework.test.annotation.DirtiesContext
@@ -18,7 +19,7 @@ import java.time.LocalDateTime
 @ContextConfiguration(initializers = [Initializer::class])
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class ReactiveDatabaseRepositoryTest(
-    private val reactiveDatabaseRepository: DatabaseRepository
+    @Autowired private val reactiveDatabaseRepository: DatabaseRepository
 ) {
     @BeforeAll
     fun beforeAll() {
@@ -41,20 +42,15 @@ internal class ReactiveDatabaseRepositoryTest(
     }
 
     @Test
-    fun `Mono if repository is have one element`() {
-        val action = Event.EventAction.SAVEUSER
-        val objectId = "objectId"
-        val localtime = LocalDateTime.now()
-        val event = Event.of(action, objectId, localtime)
-    }
-
-    @Test
-    suspend fun `Empty if repository is have one element`() {
+    fun `Empty if repository is have one element`() {
         runBlocking{
             generateSequence(1) { it + 1 }
                 .take(5)
                 .map {
-                    EventDAO()
+                    EventDAO(
+                        Event.EventAction.SAVEUSER,
+                        "x",
+                        LocalDateTime.now())
                 }
                 .filter { it.toEvent().isRight }
                 .forEach {
@@ -63,9 +59,8 @@ internal class ReactiveDatabaseRepositoryTest(
                 }
             val result =
                 reactiveDatabaseRepository
-                    .findAllEvents()
-            assert(result.count() == 1)
+                    .findAllEvents().count()
+            assert(result == 1)
         }
-
     }
 }
