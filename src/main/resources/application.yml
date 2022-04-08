@@ -1,0 +1,21 @@
+spring:
+  sql:
+    init:
+      mode: always
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/events
+    username: postgres
+    password: changeme
+    initialization-mode: always
+    pool:
+      max-size: '10'
+      initial-size: '5'
+      enabled: 'true'
+  jpa:
+    hibernate:
+      ddl-auto: create-update
+    show-sql: true
+    database: postgresql
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+    generate-ddl: true
