@@ -21,17 +21,16 @@ class Initializer : ApplicationContextInitializer<ConfigurableApplicationContext
 
         postgreSQLContainer.start()
 
-        val postgresUrl: String = (postgreSQLContainer.host + ":" + postgreSQLContainer.portBindings)
+        val postgresUrl: String = (postgreSQLContainer.host + ":" + postgreSQLContainer.getMappedPort(5432))
 
+        print("  spring.r2dbc.url=r2dbc:postgresql://$postgresUrl/events")
         TestPropertyValues
             .of(
-                "spring.datasource.url=jdbc:postgresql://$postgresUrl/events",
-                "spring.datasource.username=" + "postgres",
-                "spring.datasource.password=" + "changeme"
+                "spring.r2dbc.url=r2dbc:postgresql://$postgresUrl/events",
+                "spring.r2dbc.username=" + "postgres",
+                "spring.r2dbc.password=" + "changeme"
             )
             .applyTo(applicationContext.environment)
-
-        if (postgreSQLContainer.isRunning) println("postgres is running")
 
         val applicationContextCloseListener: ApplicationListener<ContextClosedEvent> =
             ApplicationListener<ContextClosedEvent> {
